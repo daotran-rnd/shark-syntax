@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeR Shark Deluxe: Deep Sea Coding v10</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #030a16;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 1000px;
+            height: 650px;
+            background: linear-gradient(180deg, #071930 0%, #030d1d 60%, #01050a 100%);
+            border: 4px solid #00f0ff;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3), inset 0 0 50px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Layer Overlay */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(4, 18, 38, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 12px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            z-index: 5;
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hud-label {
+            color: #88a0c0;
+            font-size: 14px;
+        }
+
+        .hud-value {
+            color: #00f0ff;
+            font-size: 22px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+        }
+
+        .lives-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .heart {
+            color: #ff3366;
+            font-size: 22px;
+            filter: drop-shadow(0 0 5px #ff3366);
+        }
+
+        /* Input Deck */
+        .bottom-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            pointer-events: auto;
+            z-index: 5;
+        }
+
+        .input-box-wrapper {
+            position: relative;
+            width: 500px;
+            background: rgba(5, 20, 40, 0.85);
+            border: 2px solid #00f0ff;
+            border-radius: 30px;
+            padding: 5px 20px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            display: flex;
+            align-items: center;
+        }
+
+        .input-prefix {
+            color: #ff007f;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 24px;
+            margin-right: 10px;
+            text-shadow: 0 0 8px #ff007f;
+        }
+
+        #code-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .btn-pause {
+            background: rgba(5, 20, 40, 0.85);
+            border: 2px solid #00f0ff;
+            color: #00f0ff;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-pause:hover {
+            background: #00f0ff;
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
+        }
+
+        /* Screens Modal */
+        .modal-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 10, 22, 0.88);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: auto;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .modal-title {
+            font-size: 46px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00f0ff, #7000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.4));
+        }
+
+        .modal-desc {
+            color: #a0c0e0;
+            font-size: 16px;
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .rules-card {
+            background: rgba(10, 30, 60, 0.6);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+            max-width: 550px;
+            width: 100%;
+        }
+
+        .rules-card h3 {
+            color: #00f0ff;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .rules-card ul {
+            list-style: none;
+            color: #d0e0ff;
+            font-size: 14px;
+        }
+
+        .rules-card li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rules-card li::before {
+            content: "➤";
+            color: #ff007f;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #00f0ff, #0072ff);
+            color: #000;
+            font-size: 20px;
+            font-weight: 800;
+            padding: 15px 45px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.9);
+            background: linear-gradient(135deg, #33f3ff, #1a82ff);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 200px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00f0ff, #ff007f);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px #00f0ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- UI Layer -->
+        <div class="ui-layer">
+            <div class="top-bar">
+                <div class="hud-item">
+                    <div>
+                        <div class="hud-label">Target</div>
+                        <div class="hud-value" id="score-display">0 / 100</div>
+                    </div>
+                </div>
+
+                <div class="hud-item">
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                </div>
+
+                <div class="hud-item">
+                    <div>
+                        <div class="hud-label">Lives</div>
+                        <div class="lives-container" id="lives-display">
+                            <span class="heart">❤️</span>
+                            <span class="heart">❤️</span>
+                            <span class="heart">❤️</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <div class="input-box-wrapper">
+                    <span class="input-prefix">R&gt;</span>
+                    <input type="text" id="code-input" autocomplete="off" spellcheck="false" placeholder="Type R command here..." autofocus />
+                </div>
+                <button class="btn-pause" id="pause-btn" onclick="togglePause()">Pause</button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="modal-screen">
+            <h1 class="modal-title">Shark Syntax v1.0</h1>
+            <p class="modal-desc">Typing challenge for R programming learner. Protect your submarine from aggressive sharks by typing R functions!</p>
+            
+            <div class="rules-card">
+                <h3> EASY LEVEL </h3>
+                <ul>
+                    <li>Type the exact R function attached to sharks to destroy them.</li>
+                    <li>Reach <strong>100 points</strong> to win the stage (+10 pts per destroyed shark).</li>
+                    <li>You have <strong>3 Lives</strong>. Do not let predators crash into your submarine!</li>
+                    <li>Press <strong>ESC</strong> to Pause/Resume during gameplay.</li>
+                </ul>
+            </div>
+
+            <button class="btn-start" onclick="startGame()">START GAME</button>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="modal-screen hidden">
+            <h1 class="modal-title">GAME PAUSED</h1>
+            <p class="modal-desc">Take a deep breath! Press Resume or hit ESC key to jump back into action.</p>
+            <button class="btn-start" onclick="togglePause()">RESUME GAME</button>
+        </div>
+
+        <!-- Game Over / Victory Screen -->
+        <div id="end-screen" class="modal-screen hidden">
+            <h1 class="modal-title" id="end-title">VICTORY!</h1>
+            <p class="modal-desc" id="end-desc">You have successfully mastered basic R functions and protected the submarine!</p>
+            
+            <div class="rules-card" style="text-align: center;">
+                <h3 style="margin-bottom: 15px;">MISSION SUMMARY</h3>
+                <p style="font-size: 18px; color: #fff; margin-bottom: 8px;">Final Score: <span id="final-score" style="color:#00f0ff; font-weight:bold;">100</span></p>
+                <p style="font-size: 18px; color: #fff;">Time Elapsed: <span id="final-time" style="color:#ff007f; font-weight:bold;">0s</span></p>
+            </div>
+
+            <button class="btn-start" onclick="restartGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = 1000;
+        canvas.height = 650;
+
+        // Scale Constant (Thu nhỏ 80%)
+        const ENTITY_SCALE = 0.8;
+
+        // Game State
+        let score = 0;
+        const targetScore = 100;
+        let lives = 3;
+        let isGameOver = false;
+        let isGameStarted = false;
+        let isPaused = false;
+        
+        let sharks = [];
+        let particles = [];
+        let bubbles = [];
+        let lasers = [];
+        let floatingOutputs = [];
+        let spawnTimer = 0;
+        let spawnInterval = 180;
+        let startTime = 0;
+        let totalPausedTime = 0;
+        let pauseStartTime = 0;
+        let animationFrameId = null;
+        let globalFrameCount = 0;
+
+        // R Commands dataset paired with evaluated R outputs
+        const rCommandsData = [
+            { cmd: "c(1, 2, 3)", output: "[1] 1 2 3" },
+            { cmd: "mean(x)", output: "[1] 5.5" },
+            { cmd: "sum(v)", output: "[1] 42" },
+            { cmd: "length(x)", output: "[1] 10" },
+            { cmd: "max(a, b)", output: "[1] 15" },
+            { cmd: "min(nums)", output: "[1] 1" },
+            { cmd: "seq(1, 5)", output: "[1] 1 2 3 4 5" },
+            { cmd: "rep(0, 3)", output: "[1] 0 0 0" },
+            { cmd: "head(df)", output: "6 rows x 4 cols" },
+            { cmd: "tail(x)", output: "[1] 8 9 10" },
+            { cmd: "abs(-5)", output: "[1] 5" },
+            { cmd: "sqrt(16)", output: "[1] 4" },
+            { cmd: "print(x)", output: '[1] "Hello R"' },
+            { cmd: "str(data)", output: "'data.frame': 10 obs" },
+            { cmd: "sort(v)", output: "[1] 1 3 5 8" },
+            { cmd: "rev(x)", output: "[1] 3 2 1" }
+        ];
+
+        let commandQueue = [];
+
+        function initCommandQueue() {
+            commandQueue = [...rCommandsData];
+            for (let i = commandQueue.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [commandQueue[i], commandQueue[j]] = [commandQueue[j], commandQueue[i]];
+            }
+        }
+
+        function getNextCommand() {
+            if (commandQueue.length === 0) {
+                initCommandQueue();
+            }
+            return commandQueue.pop();
+        }
+
+        // Submarine position
+        const subX = 110;
+        let subY = 360;
+
+        const inputField = document.getElementById('code-input');
+
+        inputField.addEventListener('input', (e) => {
+            if (!isGameStarted || isGameOver || isPaused) return;
+            
+            const currentTyped = inputField.value.trim();
+            
+            for (let i = 0; i < sharks.length; i++) {
+                if (sharks[i].text === currentTyped) {
+                    createExplosion(sharks[i].x, sharks[i].y);
+                    createLaser(subX + 52, subY - 2, sharks[i].x, sharks[i].y);
+                    createFloatingOutput(sharks[i].x, sharks[i].y, sharks[i].output);
+                    
+                    sharks.splice(i, 1);
+                    
+                    score += 10;
+                    updateUI();
+                    
+                    inputField.value = '';
+                    
+                    if (score >= targetScore) {
+                        gameVictory();
+                    }
+                    break;
+                }
+            }
+        });
+
+        // Chỉ cho phép bấm phím ESC để Pause / Resume
+        window.addEventListener('keydown', (e) => {
+            if (!isGameStarted || isGameOver) return;
+            if (e.key === 'Escape') {
+                togglePause();
+            }
+        });
+
+        // Initialize Background Bubbles
+        for (let i = 0; i < 25; i++) {
+            bubbles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 4 + 1,
+                speed: Math.random() * 1 + 0.5,
+                alpha: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        // ==================== REALISTIC SHARK CANVAS DESIGN (SCALED 80%) ====================
+        class Shark {
+            constructor() {
+                this.x = canvas.width + 120;
+                
+                const minY = 140;
+                const maxY = canvas.height - 110;
+                this.y = Math.random() * (maxY - minY) + minY;
+                
+                this.speed = Math.random() * 0.7 + 0.8;
+                
+                const selectedData = getNextCommand();
+                this.text = selectedData.cmd;
+                this.output = selectedData.output;
+                
+                this.wiggle = Math.random() * Math.PI * 2;
+            }
+
+            update() {
+                this.x -= this.speed;
+                this.wiggle += 0.07;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(ENTITY_SCALE, ENTITY_SCALE); // Scale Shark down to 80%
+
+                const wiggleY = Math.sin(this.wiggle) * 3;
+                const tailWiggle = Math.cos(this.wiggle) * 12;
+
+                ctx.shadowColor = 'rgba(255, 0, 85, 0.4)';
+                ctx.shadowBlur = 12;
+
+                // 1. Great White Tail Fin (Vây đuôi cá mập trắng 2 thùy sắc nhọn)
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.moveTo(40, wiggleY * 0.4);
+                ctx.quadraticCurveTo(60 + tailWiggle * 0.8, -15 + wiggleY, 75 + tailWiggle, -38 + wiggleY); // Thùy trên dài nhọn
+                ctx.quadraticCurveTo(62 + tailWiggle, -5 + wiggleY, 52 + tailWiggle, wiggleY);
+                ctx.quadraticCurveTo(65 + tailWiggle, 15 + wiggleY, 70 + tailWiggle, 28 + wiggleY);  // Thùy dưới
+                ctx.quadraticCurveTo(52 + tailWiggle * 0.8, 10 + wiggleY, 40, wiggleY * 0.4);
+                ctx.fill();
+
+                // 2. Main Body (Thân cá mập hình thoi săn chắc, dài khí động học)
+                let bodyGrad = ctx.createLinearGradient(0, -20, 0, 20);
+                bodyGrad.addColorStop(0, '#334155');
+                bodyGrad.addColorStop(0.4, '#1e293b');
+                bodyGrad.addColorStop(0.75, '#0f172a');
+                bodyGrad.addColorStop(1, '#020617');
+
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.moveTo(-75, wiggleY); // Mũi cá mập nhọn hướng sang trái
+                ctx.quadraticCurveTo(-35, -22 + wiggleY * 0.8, 10, -16 + wiggleY * 0.5); // Đường lưng dài
+                ctx.quadraticCurveTo(35, -10 + wiggleY * 0.5, 42, wiggleY * 0.4);       // Cuống đuôi trên
+                ctx.quadraticCurveTo(35, 12 + wiggleY * 0.5, 10, 15 + wiggleY * 0.5);        // Cuống đuôi dưới
+                ctx.quadraticCurveTo(-30, 24 + wiggleY * 0.8, -75, wiggleY);             // Đường bụng dưới
+                ctx.fill();
+
+                // 3. Signature Curved Dorsal Fin (Vây lưng cao nhọn đặc trưng)
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.moveTo(-10, -16 + wiggleY * 0.6);
+                ctx.quadraticCurveTo(0, -48 + wiggleY * 0.6, 15, -52 + wiggleY * 0.6); // Đỉnh vây vuốt về sau
+                ctx.quadraticCurveTo(12, -28 + wiggleY * 0.6, 12, -15 + wiggleY * 0.5);
+                ctx.fill();
+
+                // 4. Large Pectoral Fin (Vây ngực sải rộng góc cạnh)
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.moveTo(-25, 6 + wiggleY * 0.8);
+                ctx.lineTo(-45, 36 + wiggleY * 0.8);
+                ctx.lineTo(-30, 36 + wiggleY * 0.8);
+                ctx.lineTo(-10, 12 + wiggleY * 0.8);
+                ctx.fill();
+
+                // 5. White Underbelly Counter-shading (Vùng bụng trắng tinh tế)
+                ctx.fillStyle = 'rgba(241, 245, 249, 0.75)';
+                ctx.beginPath();
+                ctx.moveTo(-75, wiggleY);
+                ctx.quadraticCurveTo(-45, 6 + wiggleY, -20, 10 + wiggleY);
+                ctx.quadraticCurveTo(10, 12 + wiggleY, 40, wiggleY * 0.4);
+                ctx.quadraticCurveTo(-25, 22 + wiggleY, -75, wiggleY);
+                ctx.fill();
+
+                // 6. Realistic Gill Slits (4-5 khe mang cá mập trắng)
+                ctx.strokeStyle = '#ff0055';
+                ctx.lineWidth = 1.5;
+                for (let g = 0; g < 4; g++) {
+                    ctx.beginPath();
+                    ctx.arc(-30 + g * 5, 1 + wiggleY * 0.8, 8, Math.PI * 0.65, Math.PI * 1.35);
+                    ctx.stroke();
+                }
+
+                // 7. Threatening Glowing Eye (Mắt săn mồi đỏ phát sáng)
+                ctx.fillStyle = '#ff0055';
+                ctx.shadowColor = '#ff0055';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(-55, -4 + wiggleY * 0.8, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(-56, -5 + wiggleY * 0.8, 1, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 8. Menacing Teeth Array (Hàm răng lởm chởm)
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.moveTo(-73, wiggleY);
+                ctx.lineTo(-65, 4 + wiggleY);
+                ctx.lineTo(-61, 1 + wiggleY);
+                ctx.lineTo(-56, 5 + wiggleY);
+                ctx.lineTo(-52, 1 + wiggleY);
+                ctx.lineTo(-48, 4 + wiggleY);
+                ctx.lineTo(-45, wiggleY);
+                ctx.fill();
+
+                ctx.restore();
+
+                // Code Tag Banner Floating Above Shark
+                const typedValue = inputField.value.trim();
+                const isMatchingPrefix = this.text.startsWith(typedValue) && typedValue.length > 0;
+
+                ctx.save();
+                ctx.font = 'bold 15px "Courier New", monospace';
+                const textWidth = ctx.measureText(this.text).width;
+                const bannerPadding = 10;
+
+                ctx.fillStyle = isMatchingPrefix ? 'rgba(0, 240, 255, 0.95)' : 'rgba(15, 23, 42, 0.88)';
+                ctx.strokeStyle = isMatchingPrefix ? '#ffffff' : '#00f0ff';
+                ctx.lineWidth = 2;
+                
+                if (isMatchingPrefix) {
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 15;
+                }
+
+                ctx.beginPath();
+                ctx.roundRect(
+                    this.x - textWidth / 2 - bannerPadding, 
+                    this.y - 55, 
+                    textWidth + bannerPadding * 2, 
+                    26, 
+                    6
+                );
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                if (isMatchingPrefix) {
+                    ctx.fillStyle = '#000000';
+                    ctx.fillText(this.text, this.x, this.y - 42);
+                } else {
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.fillText(this.text, this.x, this.y - 42);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function createExplosion(x, y) {
+            for (let i = 0; i < 25; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    radius: Math.random() * 4 + 2,
+                    color: Math.random() > 0.5 ? '#00f0ff' : '#ff007f',
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.015
+                });
+            }
+        }
+
+        function createLaser(x1, y1, x2, y2) {
+            lasers.push({ x1, y1, x2, y2, alpha: 1 });
+        }
+
+        function createFloatingOutput(x, y, outputText) {
+            floatingOutputs.push({
+                x: x,
+                y: y - 20,
+                text: "Output: " + outputText,
+                alpha: 1.0,
+                scale: 1.0
+            });
+        }
+
+        // ==================== TACTICAL SUBMARINE CANVAS (SCALED 80%) ====================
+        function drawSubmarine() {
+            ctx.save();
+            ctx.translate(subX, subY);
+            ctx.scale(ENTITY_SCALE, ENTITY_SCALE); // Scale Submarine down to 80%
+
+            // Subtle vertical floating motion
+            const floatOffset = Math.sin(globalFrameCount * 0.04) * 3;
+            ctx.translate(0, floatOffset);
+
+            // 1. Hydro-jet Propulsion Glow
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 20;
+
+            const thrustPulse = Math.random() * 10 + 20;
+            let jetGrad = ctx.createLinearGradient(-60 - thrustPulse, 0, -60, 0);
+            jetGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+            jetGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.4)');
+            jetGrad.addColorStop(1, 'rgba(0, 240, 255, 0.9)');
+
+            ctx.fillStyle = jetGrad;
+            ctx.beginPath();
+            ctx.moveTo(-60 - thrustPulse, -10);
+            ctx.lineTo(-60, -14);
+            ctx.lineTo(-60, 14);
+            ctx.lineTo(-60 - thrustPulse, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            // 2. Hydro-jet Nozzle
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(-64, -15, 12, 30, 3);
+            ctx.fill();
+            ctx.stroke();
+
+            // 3. X-Stabilizer Tail Fins
+            ctx.fillStyle = '#1e293b';
+            // Vây trên
+            ctx.beginPath();
+            ctx.moveTo(-45, -12);
+            ctx.lineTo(-58, -32);
+            ctx.lineTo(-42, -32);
+            ctx.lineTo(-30, -15);
+            ctx.fill();
+            ctx.stroke();
+            // Vây dưới
+            ctx.beginPath();
+            ctx.moveTo(-45, 12);
+            ctx.lineTo(-58, 32);
+            ctx.lineTo(-42, 32);
+            ctx.lineTo(-30, 15);
+            ctx.fill();
+            ctx.stroke();
+
+            // 4. Tactical Hull Body
+            let hullGrad = ctx.createLinearGradient(0, -25, 0, 25);
+            hullGrad.addColorStop(0, '#334155');
+            hullGrad.addColorStop(0.3, '#1e293b');
+            hullGrad.addColorStop(0.7, '#0f172a');
+            hullGrad.addColorStop(1, '#020617');
+
+            ctx.fillStyle = hullGrad;
+            ctx.beginPath();
+            ctx.moveTo(-55, -14);
+            ctx.lineTo(-20, -22);
+            ctx.lineTo(25, -20);
+            ctx.lineTo(60, -5);
+            ctx.lineTo(65, 0);
+            ctx.lineTo(60, 5);
+            ctx.lineTo(25, 20);
+            ctx.lineTo(-20, 22);
+            ctx.lineTo(-55, 14);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 5. Armored Armor Plates & Panel Lines
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+            ctx.moveTo(-30, -20); ctx.lineTo(-30, 20);
+            ctx.moveTo(0, -21);   ctx.lineTo(0, 21);
+            ctx.moveTo(30, -18);  ctx.lineTo(30, 18);
+            ctx.stroke();
+
+            // 6. Stealth Conning Tower / Command Bridge
+            let towerGrad = ctx.createLinearGradient(0, -38, 0, -20);
+            towerGrad.addColorStop(0, '#38bdf8');
+            towerGrad.addColorStop(1, '#0f172a');
+
+            ctx.fillStyle = towerGrad;
+            ctx.beginPath();
+            ctx.moveTo(-15, -20);
+            ctx.lineTo(-5, -36);
+            ctx.lineTo(15, -36);
+            ctx.lineTo(25, -20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Periscope & Sensor Mast
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(5, -36);
+            ctx.lineTo(5, -46);
+            ctx.lineTo(12, -46);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ff007f';
+            ctx.shadowColor = '#ff007f';
+            ctx.shadowBlur = 8;
+            ctx.fillRect(10, -48, 4, 4);
+
+            // 7. Tactical Narrow Visor / Window
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#00f0ff';
+            ctx.beginPath();
+            ctx.moveTo(32, -10);
+            ctx.lineTo(52, -4);
+            ctx.lineTo(52, 2);
+            ctx.lineTo(32, 4);
+            ctx.closePath();
+            ctx.fill();
+
+            // 8. Heavy Laser Cannon Mount
+            ctx.fillStyle = '#ff007f';
+            ctx.shadowColor = '#ff007f';
+            ctx.shadowBlur = 12;
+            ctx.fillRect(62, -3, 8, 6);
+
+            // 9. Powerful Front Searchlight Beam
+            let lightBeam = ctx.createRadialGradient(65, 0, 2, 250, 0, 120);
+            lightBeam.addColorStop(0, 'rgba(0, 240, 255, 0.4)');
+            lightBeam.addColorStop(0.5, 'rgba(0, 240, 255, 0.08)');
+            lightBeam.addColorStop(1, 'rgba(0, 240, 255, 0)');
+
+            ctx.fillStyle = lightBeam;
+            ctx.beginPath();
+            ctx.moveTo(65, 0);
+            ctx.lineTo(320, -90);
+            ctx.lineTo(320, 90);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            if (isPaused) return;
+
+            globalFrameCount++;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Environment & Bubbles
+            bubbles.forEach((b) => {
+                b.y -= b.speed;
+                if (b.y < -10) b.y = canvas.height + 10;
+                ctx.fillStyle = `rgba(0, 240, 255, ${b.alpha})`;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. Draw Tactical Submarine
+            drawSubmarine();
+
+            // 3. Spawn Sharks
+            spawnTimer++;
+            if (spawnTimer > spawnInterval) {
+                sharks.push(new Shark());
+                spawnTimer = 0;
+                if (spawnInterval > 90) spawnInterval -= 2;
+            }
+
+            // 4. Update & Draw Sharks
+            for (let i = sharks.length - 1; i >= 0; i--) {
+                const shark = sharks[i];
+                shark.update();
+                shark.draw();
+
+                if (shark.x <= subX + 40) {
+                    createExplosion(shark.x, shark.y);
+                    sharks.splice(i, 1);
+                    lives--;
+                    updateUI();
+
+                    canvas.style.transform = 'translate(5px, 5px)';
+                    setTimeout(() => canvas.style.transform = 'translate(0, 0)', 100);
+
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+
+            // 5. Draw Lasers
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                const l = lasers[i];
+                ctx.strokeStyle = `rgba(0, 240, 255, ${l.alpha})`;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.moveTo(l.x1, l.y1);
+                ctx.lineTo(l.x2, l.y2);
+                ctx.stroke();
+
+                l.alpha -= 0.1;
+                if (l.alpha <= 0) lasers.splice(i, 1);
+            }
+
+            // 6. Draw Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            // 7. Render Floating R Output Labels
+            for (let i = floatingOutputs.length - 1; i >= 0; i--) {
+                const fo = floatingOutputs[i];
+                fo.y -= 0.8;
+                fo.alpha -= 0.015;
+
+                if (fo.alpha <= 0) {
+                    floatingOutputs.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = fo.alpha;
+                    ctx.font = 'bold 15px "Fira Code", monospace';
+                    ctx.textAlign = 'center';
+
+                    const textWidth = ctx.measureText(fo.text).width;
+                    
+                    ctx.fillStyle = 'rgba(0, 255, 128, 0.2)';
+                    ctx.strokeStyle = '#00ff80';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(fo.x - textWidth / 2 - 8, fo.y - 14, textWidth + 16, 24, 4);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#00ff80';
+                    ctx.shadowColor = '#00ff80';
+                    ctx.shadowBlur = 8;
+                    ctx.fillText(fo.text, fo.x, fo.y + 2);
+                    ctx.restore();
+                }
+            }
+
+            if (isGameStarted && !isGameOver && !isPaused) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score-display').innerText = `${score} / ${targetScore}`;
+            const progressPercent = Math.min((score / targetScore) * 100, 100);
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            const livesContainer = document.getElementById('lives-display');
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < lives; i++) {
+                livesContainer.innerHTML += '<span class="heart">❤️</span>';
+            }
+        }
+
+        function togglePause() {
+            if (!isGameStarted || isGameOver) return;
+
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pause-btn');
+            const pauseScreen = document.getElementById('pause-screen');
+
+            if (isPaused) {
+                pauseStartTime = Date.now();
+                pauseBtn.innerText = "Resume";
+                pauseScreen.classList.remove('hidden');
+            } else {
+                totalPausedTime += (Date.now() - pauseStartTime);
+                pauseBtn.innerText = "Pause";
+                pauseScreen.classList.add('hidden');
+                inputField.focus();
+                gameLoop();
+            }
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('pause-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+
+            score = 0;
+            lives = 3;
+            spawnInterval = 180;
+            sharks = [];
+            particles = [];
+            lasers = [];
+            floatingOutputs = [];
+            isGameOver = false;
+            isGameStarted = true;
+            isPaused = false;
+            
+            startTime = Date.now();
+            totalPausedTime = 0;
+
+            initCommandQueue();
+            
+            updateUI();
+            inputField.focus();
+            gameLoop();
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            isGameStarted = false;
+            cancelAnimationFrame(animationFrameId);
+
+            document.getElementById('end-title').innerText = "GAME OVER";
+            document.getElementById('end-title').style.background = "linear-gradient(135deg, #ff0055, #ff5500)";
+            document.getElementById('end-title').style.webkitBackgroundClip = "text";
+            document.getElementById('end-desc').innerText = "Your submarine was destroyed! Click Play Again to practice R functions.";
+            
+            const timeSpent = Math.floor((Date.now() - startTime - totalPausedTime) / 1000);
+            document.getElementById('final-score').innerText = `${score} / 100`;
+            document.getElementById('final-time').innerText = `${Math.max(0, timeSpent)}s`;
+
+            document.getElementById('end-screen').classList.remove('hidden');
+        }
+
+        function gameVictory() {
+            isGameOver = true;
+            isGameStarted = false;
+            cancelAnimationFrame(animationFrameId);
+
+            document.getElementById('end-title').innerText = "VICTORY!";
+            document.getElementById('end-title').style.background = "linear-gradient(135deg, #00f0ff, #7000ff)";
+            document.getElementById('end-title').style.webkitBackgroundClip = "text";
+            document.getElementById('end-desc').innerText = "Outstanding! You completed all challenges and mastered core R functions!";
+            
+            const timeSpent = Math.floor((Date.now() - startTime - totalPausedTime) / 1000);
+            document.getElementById('final-score').innerText = `${score} / 100`;
+            document.getElementById('final-time').innerText = `${Math.max(0, timeSpent)}s`;
+
+            document.getElementById('end-screen').classList.remove('hidden');
+        }
+
+        function restartGame() {
+            startGame();
+        }
+    </script>
+</body>
+</html>
